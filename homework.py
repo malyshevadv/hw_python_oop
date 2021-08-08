@@ -15,20 +15,22 @@ class Calculator:
 
     def get_today_stats(self) -> Union[int, float]:
         cutoff_date = dt.date.today()
-        total = 0
-        for rec in self.records:
-            if (rec.date == cutoff_date):
-                total += rec.amount
+        total = sum(rec.amount for rec in self.records
+                    if rec.date == cutoff_date)
         return total
 
     def get_week_stats(self) -> Union[int, float]:
         current_date = dt.date.today()
-        cutoff_date = dt.date.today() - dt.timedelta(days=7)
+        cutoff_date = current_date - dt.timedelta(days=7)
         total = 0
         for rec in self.records:
-            if (rec.date >= cutoff_date and rec.date <= current_date):
+            if (cutoff_date <= rec.date <= current_date):
                 total += rec.amount
         return total
+
+    def get_remainder(self) -> Union[int, float]:
+        amount_spent = self.get_today_stats()
+        return self.limit - amount_spent
 
 
 class Record:
@@ -37,7 +39,7 @@ class Record:
                  date: Optional[str] = None) -> None:
         self.amount = amount
         self.comment = comment
-        if (date is None):
+        if date is None:
             self.date = dt.date.today()
         else:
             self.date = dt.datetime.strptime(date, '%d.%m.%Y').date()
@@ -51,27 +53,23 @@ class CashCalculator(Calculator):
 
     USD_RATE = 33.32
     EURO_RATE = 50.45
-    cur_dict = {'rub': 'руб', 'usd': 'USD', 'eur': 'Euro'}
+    currencies = {'rub': ('руб', 1),
+                  'usd': ('USD', USD_RATE),
+                  'eur': ('Euro', EURO_RATE)}
 
     def get_today_cash_remained(self, currency: str) -> str:
-        money_spent = self.get_today_stats()
-        difference = self.limit - money_spent
+        selected_currency = CashCalculator.currencies[currency]
 
-        str_cur_name = CashCalculator.cur_dict[currency]
-        if (currency == 'usd'):
-            difference /= CashCalculator.USD_RATE
-        if (currency == 'eur'):
-            difference /= CashCalculator.EURO_RATE
+        difference = round(self.get_remainder() / selected_currency[1], 2)
 
-        difference = round(difference, 2)
         if (difference > 0):
-            result = f'На сегодня осталось {difference} {str_cur_name}'
+            result = f'На сегодня осталось {difference} {selected_currency[0]}'
         elif (difference == 0):
             result = 'Денег нет, держись'
         else:
             difference = abs(difference)
             result = ('Денег нет, держись: '
-                      f'твой долг - {difference} {str_cur_name}')
+                      f'твой долг - {difference} {selected_currency[0]}')
         return result
 
 
@@ -81,11 +79,10 @@ class CaloriesCalculator(Calculator):
     """
 
     def get_calories_remained(self) -> str:
-        kkal_eaten = self.get_today_stats()
-        difference = self.limit - kkal_eaten
+        difference = self.get_remainder()
 
         if (difference > 0):
-            result = (f'Сегодня можно съесть что-нибудь ещё, '
+            result = ('Сегодня можно съесть что-нибудь ещё, '
                       f'но с общей калорийностью не более {difference} кКал')
         else:
             result = 'Хватит есть!'
