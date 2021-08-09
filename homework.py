@@ -15,17 +15,15 @@ class Calculator:
 
     def get_today_stats(self) -> Union[int, float]:
         cutoff_date = dt.date.today()
-        total = sum(rec.amount for rec in self.records
-                    if rec.date == cutoff_date)
-        return total
+        return sum(rec.amount for rec in self.records
+                   if rec.date == cutoff_date)
 
     def get_week_stats(self) -> Union[int, float]:
         current_date = dt.date.today()
         cutoff_date = current_date - dt.timedelta(days=7)
-        total = 0
-        total = sum(rec.amount for rec in self.records
-                    if cutoff_date <= rec.date <= current_date)
-        return total
+
+        return sum(rec.amount for rec in self.records
+                   if cutoff_date <= rec.date <= current_date)
 
     def get_remainder(self) -> Union[int, float]:
         amount_spent = self.get_today_stats()
@@ -59,19 +57,18 @@ class CashCalculator(Calculator):
     def get_today_cash_remained(self, currency: str) -> str:
         difference = self.get_remainder()
         if difference == 0:
-            result = 'Денег нет, держись'
+            return 'Денег нет, держись'
+
+        currency_name, currency_rate = CashCalculator.currencies[currency]
+
+        difference = round(difference / currency_rate, 2)
+
+        if difference > 0:
+            return f'На сегодня осталось {difference} {currency_name}'
         else:
-            currency_name, currency_rate = CashCalculator.currencies[currency]
-
-            difference = round(difference / currency_rate, 2)
-
-            if difference > 0:
-                result = f'На сегодня осталось {difference} {currency_name}'
-            else:
-                difference = abs(difference)
-                result = ('Денег нет, держись: '
-                          f'твой долг - {difference} {currency_name}')
-        return result
+            difference = abs(difference)
+            return ('Денег нет, держись: '
+                    f'твой долг - {difference} {currency_name}')
 
 
 class CaloriesCalculator(Calculator):
@@ -83,9 +80,7 @@ class CaloriesCalculator(Calculator):
         difference = self.get_remainder()
 
         if (difference > 0):
-            result = ('Сегодня можно съесть что-нибудь ещё, '
-                      f'но с общей калорийностью не более {difference} кКал')
+            return ('Сегодня можно съесть что-нибудь ещё, '
+                    f'но с общей калорийностью не более {difference} кКал')
         else:
-            result = 'Хватит есть!'
-
-        return result
+            return 'Хватит есть!'
