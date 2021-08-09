@@ -23,9 +23,8 @@ class Calculator:
         current_date = dt.date.today()
         cutoff_date = current_date - dt.timedelta(days=7)
         total = 0
-        for rec in self.records:
-            if (cutoff_date <= rec.date <= current_date):
-                total += rec.amount
+        total = sum(rec.amount for rec in self.records
+                    if cutoff_date <= rec.date <= current_date)
         return total
 
     def get_remainder(self) -> Union[int, float]:
@@ -58,18 +57,20 @@ class CashCalculator(Calculator):
                   'eur': ('Euro', EURO_RATE)}
 
     def get_today_cash_remained(self, currency: str) -> str:
-        selected_currency = CashCalculator.currencies[currency]
-
-        difference = round(self.get_remainder() / selected_currency[1], 2)
-
-        if (difference > 0):
-            result = f'На сегодня осталось {difference} {selected_currency[0]}'
-        elif (difference == 0):
+        difference = self.get_remainder()
+        if difference == 0:
             result = 'Денег нет, держись'
         else:
-            difference = abs(difference)
-            result = ('Денег нет, держись: '
-                      f'твой долг - {difference} {selected_currency[0]}')
+            currency_name, currency_rate = CashCalculator.currencies[currency]
+
+            difference = round(difference / currency_rate, 2)
+
+            if difference > 0:
+                result = f'На сегодня осталось {difference} {currency_name}'
+            else:
+                difference = abs(difference)
+                result = ('Денег нет, держись: '
+                          f'твой долг - {difference} {currency_name}')
         return result
 
 
